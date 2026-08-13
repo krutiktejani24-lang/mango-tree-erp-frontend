@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from 'react-query';
 import api from '../api/client';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { amountInWords } from '../utils/numberToWords';
-import { Printer, Download, Trash2 } from 'lucide-react';
+import { Printer, Download, Trash2, Pencil } from 'lucide-react';
 
 const STATUS_LABEL = { draft: 'PENDING', partial: 'PENDING', paid: 'PAID', cancelled: 'CANCELLED' };
 const STATUS_COLOR = {
@@ -74,6 +74,9 @@ async function downloadPDF() {
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => window.print()} className="btn-secondary flex items-center gap-1.5 text-sm"><Printer size={15} /> Print</button>
           <button onClick={downloadPDF} className="btn-secondary flex items-center gap-1.5 text-sm"><Download size={15} /> PDF</button>
+          {invoice.is_editable && (
+            <Link to={`/invoices/${id}/edit`} className="btn-secondary flex items-center gap-1.5 text-sm"><Pencil size={15} /> Edit</Link>
+          )}
           {invoice.balance_due > 0 && (
             <button onClick={() => setShowPay(true)} className="btn-primary text-sm">Record Payment</button>
           )}
@@ -97,7 +100,6 @@ async function downloadPDF() {
           <div className="text-right">
             <p className="font-bold text-forest">TAX INVOICE</p>
             <p className="text-xs">Bill No: {invoice.invoice_number}</p>
-            <p className="text-xs">Booked ID: {invoice.booking_ref || '-'}</p>
             <p className="text-xs">Date: {new Date(invoice.invoice_date).toLocaleDateString('en-IN')}</p>
             <span className={`badge ${STATUS_COLOR[invoice.status]} mt-1 inline-block`}>{statusLabel}</span>
           </div>
@@ -198,7 +200,6 @@ async function downloadPDF() {
               <Row label="Payment Status" value={statusLabel} />
               <Row label="Invoice Date" value={new Date(invoice.invoice_date).toLocaleDateString('en-IN')} />
               <Row label="Bill No" value={invoice.invoice_number} />
-              <Row label="Booked ID" value={invoice.booking_ref || '-'} />
               <div className="flex justify-between bg-forest text-white rounded px-2 py-1.5 mt-1">
                 <span className="font-semibold">Amount Due</span>
                 <span className="font-semibold">₹{Number(invoice.balance_due).toLocaleString('en-IN')}</span>

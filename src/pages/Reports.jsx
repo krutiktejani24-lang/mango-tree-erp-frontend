@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import api from '../api/client';
+import api, { downloadFile } from '../api/client';
 import { Download } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const periods = [
   ['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly'], ['yearly', 'Yearly'], ['custom', 'Custom'],
@@ -21,9 +22,13 @@ export default function Reports() {
   const { data: occ } = useQuery(['report-occ', params], () =>
     api.get('/reports/occupancy', { params }).then((r) => r.data), { enabled: tab === 'occupancy' });
 
-  function exportFile(type) {
-    const q = new URLSearchParams(params).toString();
-    window.open(`${api.defaults.baseURL}/reports/export/${type}?${q}`, '_blank');
+  async function exportFile(type) {
+    try {
+      const filename = `${type === 'invoices' ? 'Invoice' : 'Payment'}_Report.xlsx`;
+      await downloadFile(`/reports/export/${type}`, filename, params);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Export failed');
+    }
   }
 
   return (

@@ -9,6 +9,7 @@ import Rooms from './pages/Rooms';
 import CheckInOut from './pages/CheckInOut';
 import Invoices from './pages/Invoices';
 import InvoiceDetail from './pages/InvoiceDetail';
+import EditInvoice from './pages/EditInvoice';
 import Billing from './pages/Billing';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/check-in" element={<CheckInOut />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
+        <Route path="/invoices/:id/edit" element={<EditInvoice />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/reports" element={<ProtectedRoute ownerOnly><Reports /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute ownerOnly><Users /></ProtectedRoute>} />

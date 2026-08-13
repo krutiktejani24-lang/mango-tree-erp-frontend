@@ -3,11 +3,12 @@ import { useQuery, useQueryClient } from 'react-query';
 import { useForm } from 'react-hook-form';
 import api from '../api/client';
 import { toast } from 'react-toastify';
-import { Trash2, UserPlus } from 'lucide-react';
+import { Trash2, UserPlus, Pencil } from 'lucide-react';
 
 export default function Users() {
   const { data } = useQuery('users', () => api.get('/users').then((r) => r.data.users));
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const qc = useQueryClient();
 
   const ownerCount = (data || []).filter((u) => u.role === 'owner').length;
@@ -46,7 +47,10 @@ export default function Users() {
                 <td className="capitalize">{u.role}</td>
                 <td>{u.is_active ? <span className="badge bg-green-100 text-green-700">Active</span> : <span className="badge bg-gray-200 text-gray-600">Inactive</span>}</td>
                 <td>{u.last_login ? new Date(u.last_login).toLocaleString('en-IN') : '—'}</td>
-                <td><button onClick={() => deleteUser(u.id)} className="text-red-500"><Trash2 size={16} /></button></td>
+                <td className="flex gap-3">
+                  <button onClick={() => setEditingUser(u)} className="text-forest"><Pencil size={16} /></button>
+                  <button onClick={() => deleteUser(u.id)} className="text-red-500"><Trash2 size={16} /></button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -59,6 +63,14 @@ export default function Users() {
           staffCount={staffCount}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); qc.invalidateQueries('users'); }}
+        />
+      )}
+
+      {editingUser && (
+        <EditUserForm
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSaved={() => { setEditingUser(null); qc.invalidateQueries('users'); }}
         />
       )}
     </div>
@@ -93,6 +105,62 @@ function UserForm({ ownerCount, staffCount, onClose, onSaved }) {
         <div className="flex gap-2 justify-end pt-2">
           <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
           <button type="submit" disabled={isSubmitting} className="btn-primary">{isSubmitting ? 'Saving…' : 'Create'}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function EditUserForm({ user, onClose, onSaved }) {
+  const { register, handleSubmit, formState: { isSubmitting } } = useForm({
+    defaultValues: {
+      name: user.name,
+      phone: user.phone || '',
+      is_active: user.is_active ? '1' : '0',
+    },
+  });
+
+  async function onSubmit(values) {
+    try {
+      await api.put(`/users/${user.id}`, {
+        name: values.name,
+        phone: values.phone || null,
+        is_active: values.is_active === '1',
+      });
+      toast.success('User updated');
+      onSaved();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update user');
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <form onSubmit={handleSubmit(onSubmit)} className="card w-full max-w-sm space-y-3">
+        <h3 className="font-semibold">Edit User</h3>
+        <div>
+          <label className="label">Email</label>
+          <input className="input opacity-60" value={user.email} disabled />
+        </div>
+        <div>
+          <label className="label">Full Name</label>
+          <input className="input" {...register('name', { required: true })} />
+        </div>
+        <div>
+          <label className="label">Phone</label>
+          <input className="input" {...register('phone')} />
+        </div>
+        <div>
+          <label className="label">Status</label>
+          <select className="input" {...register('is_active')}>
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+          </select>
+        </div>
+        <p className="text-[11px] text-gray-400">Email and role can't be changed here — remove and re-add the user if those need to change.</p>
+        <div className="flex gap-2 justify-end pt-2">
+          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+          <button type="submit" disabled={isSubmitting} className="btn-primary">{isSubmitting ? 'Saving…' : 'Save'}</button>
         </div>
       </form>
     </div>
